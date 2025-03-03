@@ -1,0 +1,34 @@
+<div class="register-container">
+  <h2 class="title">Créer un compte</h2>
+
+  <form (ngSubmit)="onRegister()" class="register-form">
+    <!-- Champ pour le nom -->
+    <div class="form-group">
+      <label for="name">Nom</label>
+      <input type="text" id="name" [(ngModel)]="name" name="name" required placeholder="Entrez votre nom">
+    </div>
+
+    <div class="form-group">
+      <label for="email">Email</label>
+      <input type="email" id="email" [(ngModel)]="email" name="email" required placeholder="Entrez votre email">
+    </div>
+
+    <div class="form-group">
+      <label for="password">Mot de passe</label>
+      <input type="password" id="password" [(ngModel)]="password" name="password" required placeholder="Entrez votre mot de passe">
+    </div>
+
+    <div class="form-group">
+      <label for="confirmPassword">Confirmer le mot de passe</label>
+      <input type="password" id="confirmPassword" [(ngModel)]="confirmPassword" name="confirmPassword" required placeholder="Confirmez votre mot de passe">
+    </div>
+
+    <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+
+    <button type="submit" class="submit-btn">S'inscrire</button>
+  </form>
+
+  <p class="login-link">
+    Déjà un compte ? <a routerLink="/login">Se connecter</a>
+  </p>
+</div>

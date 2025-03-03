@@ -1,0 +1,20 @@
+<div class="chat-container">
+  <div class="messages">
+    <!-- Affiche les messages -->
+    <div *ngFor="let message of messages" class="message">
+      <p><strong>{{ message.senderId }}:</strong> {{ message.content }}</p>
+      <small>{{ message.timestamp | date: 'short' }}</small>
+    </div>
+  </div>
+
+  <div class="input-area">
+    <!-- Champ de saisie du message -->
+    <textarea [(ngModel)]="newMessage" placeholder="Écrire un message..." rows="3"></textarea>
+    <button (click)="sendMessage()" [disabled]="!newMessage.trim()">Envoyer</button>
+  </div>
+
+  <!-- Affiche l'état de connexion WebSocket -->
+  <div *ngIf="!isConnected" class="connection-status">
+    Connexion perdue...
+  </div>
+</div>

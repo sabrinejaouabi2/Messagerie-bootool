@@ -1,0 +1,48 @@
+<div class="dashboard-container">
+  <div class="header">
+    <h1>Bienvenue, {{ currentUser?.name }}</h1>
+    <button class="logout-btn" (click)="logout()">Se déconnecter</button>
+  </div>
+
+  <div class="chat-container">
+    <div class="users-list">
+      <h2>Utilisateurs</h2>
+      <ul>
+        <li *ngFor="let user of users" (click)="startChat(user.email)">
+          {{ user.name }}
+        </li>
+      </ul>
+    </div>
+
+    <div class="chat-box">
+      <div class="message-list" *ngIf="messages.length > 0">
+        <div *ngFor="let message of messages">
+          <div *ngIf="message.receiverId === currentUser.email || message.senderEmail === currentUser.email">
+            <p><strong>{{ message.senderName }}:</strong> {{ message.content }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="new-message">
+        <textarea [(ngModel)]="message" placeholder="Tapez votre message..."></textarea>
+        <button (click)="onSendMessage()">Envoyer</button>
+      </div>
+
+      <div class="received-messages" *ngIf="showReceived">
+        <h3>Messages reçus</h3>
+        <ul>
+          <li *ngFor="let msg of receivedMessages">
+            <strong>{{ msg.senderName }}:</strong> {{ msg.content }}
+          </li>
+        </ul>
+      </div>
+
+      <button *ngIf="hasNewMessages" (click)="showReceivedMessages()">Voir les messages reçus</button>
+    </div>
+  </div>
+
+  <div *ngIf="replyingTo" class="reply-section">
+    <textarea [(ngModel)]="replyMessage" placeholder="Tapez votre réponse..."></textarea>
+    <button (click)="sendReply()">Répondre</button>
+  </div>
+</div>
