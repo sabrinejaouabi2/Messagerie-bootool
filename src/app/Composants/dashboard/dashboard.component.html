@@ -26,7 +26,17 @@
       <div class="new-message">
         <textarea [(ngModel)]="message" placeholder="Tapez votre message..."></textarea>
         <button (click)="onSendMessage()">Envoyer</button>
+
+        <!-- Ajouter un bouton pour enregistrer un message vocal -->
+        <button (click)="startRecording()" *ngIf="!isRecording">Commencer l'enregistrement</button>
+        <button (click)="stopRecording()" *ngIf="isRecording">Arrêter l'enregistrement</button>
+        <button (click)="sendVoiceMessage()" *ngIf="audioBlob">Envoyer le message vocal</button>
       </div>
+ <!-- Afficher l'audio après l'enregistrement -->
+ <div *ngIf="audioBlob">
+  <audio *ngIf="audioUrl" [src]="audioUrl" controls></audio>
+
+</div>
 
       <div class="received-messages" *ngIf="showReceived">
         <h3>Messages reçus</h3>

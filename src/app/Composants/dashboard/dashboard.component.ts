@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from "@angular/core";
+import { DomSanitizer, SafeResourceUrl } from "@angular/platform-browser";
 import { Router } from "@angular/router";
 import {  Subject } from "rxjs";
 import { IMessage } from "src/app/models/IMessage";
@@ -24,13 +25,21 @@ export class DashboardComponent implements OnInit, OnDestroy {
   replyingTo: string | null = null;  // Utilisé pour afficher le nom du destinataire
   replyMessage: string = '';  // Le message de réponse
   hasNewMessages: boolean = false; // Indique s'il y a un nouveau message
-
+//Recording
+messageType: string = 'text';
+isRecording: boolean = false;
+audioRecorder: any;
+stream: MediaStream | null = null;
+audioBlob: Blob | null = null;
+audioUrl: SafeResourceUrl | null = null;  // Change to SafeResourceUrl
   constructor(
     private authService: AuthService,
     private userService: UserService,
     private chatService: ChatService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private sanitizer: DomSanitizer
+
   ) {}
 
   ngOnInit(): void {
@@ -109,7 +118,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
         senderEmail: this.currentUser.email,
         receiverId: this.replyingTo,
         content: this.replyMessage,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        type: this.audioBlob ? 'audio' : 'text', // Déterminer le type du message
+        audioUrl: this.audioBlob ? this.audioUrl : null // Peut être null si aucun message vocal
       };
 
       console.log('Réponse envoyée:', reply);
@@ -155,29 +166,34 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
 
 
-
-  // Fonction pour envoyer un message
   onSendMessage(): void {
     if (this.message.trim() && this.receiverEmail) {
       const message: IMessage = {
-        id: Date.now(),  // Generate a unique ID (replace with backend-generated ID if applicable)
+        id: Date.now(),
         senderId: this.currentUser.id,
         senderName: this.currentUser.name,
         senderEmail: this.currentUser.email,
-        receiverId: this.receiverEmail, // Utiliser l'email ou un autre identifiant du destinataire
-        content: this.message,  // Le message tapé par l'utilisateur
-        timestamp: new Date().toISOString()
+        receiverId: this.receiverEmail,
+        content: this.message,
+        timestamp: new Date().toISOString(),
+        type: this.audioBlob ? 'audio' : 'text', // Déterminer le type du message
+        audioUrl: this.audioBlob ? this.audioUrl : null // Peut être null si aucun message vocal
       };
 
-      console.log('Message à envoyer:', message);  // Affiche le message à envoyer
-      this.chatService.sendMessage(message);  // Envoyer le message via le service
-      this.message = '';  // Réinitialiser le champ de saisie après l'envoi
+      console.log('Message à envoyer:', message); // Afficher le message envoyé
+      this.chatService.sendMessage(message); // Envoyer le message via le service
+      this.message = ''; // Réinitialiser la saisie du message
+      this.audioUrl = null; // Réinitialiser l'URL de l'audio après envoi
     } else {
       console.log('Erreur: message vide ou destinataire non sélectionné');
     }
   }
 
+
   ngOnDestroy(): void {
+    if (this.audioRecorder) {
+      this.audioRecorder.stop();
+    }
     this.unsubscribe$.next();
     this.unsubscribe$.complete();
   }
@@ -190,4 +206,86 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.router.navigate(['/login']);
     console.log('Utilisateur déconnecté');
   }
+  //Recorder
+  startRecording(): void {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      console.log('Tentative d\'accéder à l\'audio...');
+      navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+        console.log('Accès à l\'audio accordé');
+        this.audioRecorder = new (window as any).MediaRecorder(stream);
+        this.audioBlob = null;  // Reset any previous recordings
+
+        this.audioRecorder.ondataavailable = (event: any) => {
+          this.audioBlob = event.data;  // Save the recorded audio blob
+          if (this.audioBlob !== null) {
+            this.audioUrl = this.sanitizer.bypassSecurityTrustUrl(URL.createObjectURL(this.audioBlob));  // Créer une URL de l'audio
+          } else {
+            console.error('Audio blob is null');
+          }
+                  };
+
+        this.audioRecorder.onstop = () => {
+          console.log('Enregistrement arrêté');
+        };
+
+        if (this.audioRecorder.state === 'inactive') {
+          console.log('Enregistrement démarré');
+          this.audioRecorder.start();
+          this.isRecording = true;  // Set the recording flag to true
+          this.stream = stream;
+        } else {
+          console.error('Erreur: le MediaRecorder est déjà en cours d\'enregistrement.');
+        }
+      }).catch((error) => {
+        console.error('Erreur lors de l\'accès à l\'audio:', error);
+      });
+    } else {
+      alert('L\'enregistrement audio n\'est pas supporté par votre navigateur.');
+    }
+  }
+
+  stopRecording(): void {
+    if (this.audioRecorder && this.isRecording) {
+      this.audioRecorder.stop();
+      this.isRecording = false;  // Set the recording flag to false
+      this.stream?.getTracks().forEach(track => track.stop()); // Stop the media stream
+      console.log('Recording stopped');
+    }
+  }
+
+  sendVoiceMessage(): void {
+    if (this.audioBlob && this.receiverEmail) {  // Ensure audioBlob is not null
+      const formData = new FormData();
+      formData.append('audio', this.audioBlob, 'voice_message.wav');
+
+      // Sanitize the blob URL using DomSanitizer
+      const sanitizedAudioUrl: SafeResourceUrl = this.sanitizer.bypassSecurityTrustUrl(URL.createObjectURL(this.audioBlob));
+
+      const message: IMessage = {
+        id: Date.now(),
+        senderId: this.currentUser.id,
+        senderName: this.currentUser.name,
+        senderEmail: this.currentUser.email,
+        receiverId: this.receiverEmail,
+        content: 'Message vocal',
+        audioUrl: sanitizedAudioUrl,  // Use the sanitized URL
+        timestamp: new Date().toISOString(),
+        type: 'audio'  // Ajouter le type de message ici, 'text' pour les messages textuels
+
+      };
+
+      this.chatService.sendMessage(message);
+      this.audioBlob = null;
+      this.isRecording = false;
+      console.log('Message vocal envoyé');
+    } else {
+      console.log('Erreur: Aucun message vocal à envoyer ou audioBlob est null.');
+    }
+  }
+
+createSafeAudioUrl(blob: Blob): SafeResourceUrl {
+  return this.sanitizer.bypassSecurityTrustUrl(URL.createObjectURL(blob));
+}
+
+
 }
