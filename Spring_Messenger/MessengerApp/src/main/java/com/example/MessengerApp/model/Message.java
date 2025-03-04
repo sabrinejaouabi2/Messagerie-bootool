@@ -1,12 +1,15 @@
 package com.example.MessengerApp.model;
-
 import java.time.LocalDateTime;
+import java.util.Map;
 
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -29,5 +32,6 @@ private Long id;
     // Champ supplémentaire pour stocker le nom de l'expéditeur
     private String senderName;  // Or you can use 'senderEmail' if you prefer
     private String senderEmail; // Email de l'expéditeur
-
+ @Embedded
+    private AudioUrl audioUrl;  // Embed AudioUrl as a field}
 }
