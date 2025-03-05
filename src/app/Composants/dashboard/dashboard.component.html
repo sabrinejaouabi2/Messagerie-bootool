@@ -19,23 +19,49 @@
         <div *ngFor="let message of messages">
           <div *ngIf="message.receiverId === currentUser.email || message.senderEmail === currentUser.email">
             <p><strong>{{ message.senderName }}:</strong> {{ message.content }}</p>
+
+            <!-- If there's an audio URL, display the audio player -->
+            <div *ngIf="message.audioUrl">
+              <p>Message vocal:</p>
+              <audio [src]="message.audioUrl" controls></audio>  <!-- Use audioUrl directly here -->
+            </div>
+
           </div>
         </div>
       </div>
 
+
       <div class="new-message">
         <textarea [(ngModel)]="message" placeholder="Tapez votre message..."></textarea>
         <button (click)="onSendMessage()">Envoyer</button>
+
+        <!-- Ajouter un bouton pour enregistrer un message vocal -->
+        <button (click)="startRecording()" *ngIf="!isRecording">Commencer l'enregistrement</button>
+        <button (click)="stopRecording()" *ngIf="isRecording">Arrêter l'enregistrement</button>
+        <button (click)="sendVoiceMessage()" *ngIf="audioBlob">Envoyer le message vocal</button>
+      </div>
+ <!-- Afficher l'audio après l'enregistrement -->
+ <div *ngIf="audioBlob">
+  <audio *ngIf="audioUrl" [src]="audioUrl" controls></audio>
+
+</div>
+
+<div class="received-messages" *ngIf="showReceived">
+  <h3>Messages reçus</h3>
+  <ul>
+    <li *ngFor="let msg of receivedMessages">
+      <strong>{{ msg.senderName }}:</strong> {{ msg.content }}
+
+      <!-- Si un message vocal existe, on affiche le lecteur audio -->
+      <div *ngIf="msg.audioUrl">
+        <p>Message vocal:</p>
+        <audio [src]="msg.audioUrl" controls></audio>  <!-- Use audioUrl directly here -->
       </div>
 
-      <div class="received-messages" *ngIf="showReceived">
-        <h3>Messages reçus</h3>
-        <ul>
-          <li *ngFor="let msg of receivedMessages">
-            <strong>{{ msg.senderName }}:</strong> {{ msg.content }}
-          </li>
-        </ul>
-      </div>
+    </li>
+  </ul>
+</div>
+
 
       <button *ngIf="hasNewMessages" (click)="showReceivedMessages()">Voir les messages reçus</button>
     </div>

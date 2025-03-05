@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { SafeResourceUrl } from '@angular/platform-browser';
 import { ChatService } from 'src/app/Services/chat.service';
 import { UserService } from 'src/app/Services/user.service';
 import { IMessage } from 'src/app/models/IMessage';
@@ -10,12 +11,13 @@ import { User } from 'src/app/models/user';
   styleUrls: ['./chat.component.scss'],
 })
 export class ChatComponent implements OnInit, OnDestroy {
-  newMessage: string = ''; // Liaison pour le champ de saisie
-  messages: IMessage[] = []; // Tableau des messages reçus
-  isConnected: boolean = false; // Statut de la connexion WebSocket
-  selectedReceiverId: string | null = null;  // Dynamique selon la sélection du destinataire
-  users: User[] = []; // Liste des utilisateurs disponibles
-
+  newMessage: string = '';
+  messages: IMessage[] = [];
+  isConnected: boolean = false;
+  selectedReceiverId: string | null = null;
+  users: User[] = [];
+audioBlob: Blob | null = null;
+audioUrl: SafeResourceUrl | null = null;
   constructor(private chatService: ChatService, private userService: UserService) {}
 
   ngOnInit() {
@@ -71,6 +73,10 @@ export class ChatComponent implements OnInit, OnDestroy {
           receiverId: this.selectedReceiverId,  // Now guaranteed to be a valid string
           content: this.newMessage,
           timestamp: new Date().toISOString(),
+          type: this.audioBlob ? 'audio' : 'text', // Déterminer le type du message
+          audioUrl: this.audioBlob ? this.audioUrl : null // Peut être null si aucun message vocal
+
+
         };
 
         this.chatService.sendMessage(message);  // Send the message

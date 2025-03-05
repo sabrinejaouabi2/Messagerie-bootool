@@ -62,6 +62,7 @@ export class ChatService {
   }
 
   // Envoi de message
+
   sendMessage(message: IMessage) {
     if (this.stompClient && this.stompClient.connected) {
       this.stompClient.publish({
@@ -72,6 +73,7 @@ export class ChatService {
       console.warn('WebSocket client is not connect-ed'); // Avertir si la connexion WebSocket échoue
     }
   }
+
 
   // Récupérer les messages sous forme d'observable
   getMessages(): Observable<IMessage> {
@@ -99,5 +101,16 @@ export class ChatService {
   getMessagesByUsers(senderEmail: string, receiverEmail: string): Observable<IMessage[]> {
     return this.http.get<IMessage[]>(`/api/messages?sender=${senderEmail}&receiver=${receiverEmail}`);
   }
+  // Méthode pour recevoir et traiter les messages
+receiveMessage(message: IMessage) {
+  if (message.type === 'audio' && message.audioUrl) {
+    console.log('Message audio reçu:', message.audioUrl); // Affichage de l'URL de l'audio dans la console
+  }
+  // Ajouter le message à la liste des messages reçus
+  this.messageSubject.next(message);
+}
+
+
+
 
 }
